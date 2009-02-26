@@ -97,6 +97,37 @@ class VixAPI
 		def upgrade_vhardware()
 			@api._upgrade_vhardware(@vm)
 		end
+		def capture_screen_image                                                                                                                      
+            @api._capture_screen_image(@vm)                                                                                                   
+        end                                                                                                                                   
+                                                                                                                                       
+        def cp_to_host(src,dst)                                                                                                               
+            @api._copy_file_from_guest_to_host(@vm,src,dst)                                                                                   
+        end                                                                                                                                   
+                                                                                                                                              
+        def cp_to_guest(src,dst)                                                                                                              
+            @api._copy_file_from_host_to_guest(@vm,src,dst)                                                                                   
+        end                                                                                                                                   
+                                                                                                                                              
+        def mkdir_guest(path)                                                                                                                 
+            @api._create_directory_in_guest(@vm, path)                                                                                        
+        end                                                                                                                                   
+                                                                                                                                              
+        def mktemp_guest                                                                                                                      
+            @api._create_temp_file_in_guest(@vm)                                                                                              
+        end                                                                                                                                   
+                                                                                                                                              
+        def rmdir_guest                                                                                                                       
+            @api._delete_directory_in_guest(@vm, path)                                                                                        
+        end                                                                                                                                   
+                                                                                                                                              
+        def rm_guest                                                                                                                          
+            @api._delete_file_in_guest(@vm, path)                                                                                             
+        end                                                                                                                                   
+                                                                                                                                              
+        def directory_exists?                                                                                                                 
+            @api._directory_exists_in_guest(@vm, path)                                                                                        
+        end      
 	end	
 
 	class Host

@@ -242,4 +242,3 @@ _upgrade_vhardware(VALUE self, VALUE rvm)
 	Vix_ReleaseHandle(job);
 	return Qtrue;
 }
-
