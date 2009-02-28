@@ -1,159 +1,344 @@
-require 'vixapi' # raw C extension mappings
+# Copyright (c) 2009 Sean Bradly
+#
+# This code is provided under the BSD license 
 
-## Global Default Options
-$vixopt = {
-	# connect opts
-	:hosttype => VixAPI::Const::Provider::Workstation,
-	:hostname => nil,
-	:user => nil,
-	:pass => nil,
-	:port => 8222,
-	
-	# vm opts
-	:vmxfile => nil,
-	:showgui => false,
-	:poweroffinguest => true # reset and poweroff will use the guest OS to shutdown
-}
+require 'vixapi' # vixapi.so, C extension wrappers
 
-class VixAPI
-	attr_accessor :opt
-	attr_reader :session
 
-	def initialize(opt={})
-		@opt=$vixopt.merge(opt)
-	end
+# The VixAPI module is defined in C by vixapi.so this is just here so 
+# there can be ruby method signatures.
+module VixAPI
+    
+    def login_in_guest(*args); raise "NOT IMPLEMENTED"; end
+    def logout_from_guest(*args); raise "NOT IMPLEMENTED"; end
+        
+    #
+    # Guest OS methods
+    #
 
-	def connect(opt={})
-		opt = @opt.merge(opt)
+    def capture_screen_image(*args); raise "NOT IMPLEMENTED"; end
+    def install_tools(*args); raise "NOT IMPLEMENTED"; end
+    def wait_for_tools_in_guest(*args); raise "NOT IMPLEMENTED"; end
+
+    #
+    # Guest OS File methods
+    #
+
+    def copy_file_from_guest_to_host(*args); raise "NOT IMPLEMENTED"; end
+    def copy_file_from_host_to_guest(*args); raise "NOT IMPLEMENTED"; end
+    def create_directory_in_guest(*args); raise "NOT IMPLEMENTED"; end
+    def create_temp_file_in_guest(*args); raise "NOT IMPLEMENTED"; end
+    def delete_directory_in_guest(*args); raise "NOT IMPLEMENTED"; end
+    def delete_file_in_guest(*args); raise "NOT IMPLEMENTED"; end
+    def directory_exists_in_guest(*args); raise "NOT IMPLEMENTED"; end
+    def list_directory_in_guest(*args); raise "NOT IMPLEMENTED"; end
+    def file_exists_in_guest(*args); raise "NOT IMPLEMENTED"; end
+    def get_file_info_in_guest(*args); raise "NOT IMPLEMENTED"; end
+    def rename_file_in_guest(*args); raise "NOT IMPLEMENTED"; end
+
+    #
+    # Guest OS Process methods
+    #
+
+    def kill_process_in_guest(*args); raise "NOT IMPLEMENTED"; end
+    def list_processes_in_guest(*args); raise "NOT IMPLEMENTED"; end
+    def open_url_in_guest(*args); raise "NOT IMPLEMENTED"; end
+    def run_program_in_guest(*args); raise "NOT IMPLEMENTED"; end
+    def run_script_in_guest(*args); raise "NOT IMPLEMENTED"; end
+
+    #
+    # Guest OS Shared Folder methods
+    #
+
+    def enable_shared_folders(*args); raise "NOT IMPLEMENTED"; end
+    def add_shared_folder(*args); raise "NOT IMPLEMENTED"; end
+    def remove_shared_folder(*args); raise "NOT IMPLEMENTED"; end
+    # this will have to be abstracted into ruby-friendlyness
+    #def set_shared_folder_state(*args); raise "NOT IMPLEMENTED"; end
+    #def get_shared_folder_state(*args); raise "NOT IMPLEMENTED"; end
+    #def get_num_shared_folders(*args); raise "NOT IMPLEMENTED"; end
+
+    #
+    # Snapshot methods
+    #
+    
+    # create a custom set of C functions to deal with this
+
+    #
+    # VM methods
+    #
+    def clone(*args); raise "NOT IMPLEMENTED"; end
+
+    # Constants as defined in `/usr/include/vmware-vix/vix.h'
+    module Const
+        # Endpoint's host type (VMware Workstation, Server, Etc)
+        module Provider
+            Default     = 1
+            Server1x    = 2
+            Workstation = 3
+            Server2x    = 10
+        end
+        # VixHandle properties types 
+        module Property
+            module Host
+                HostType   = 50
+                APIVersion = 51
+            end
+            module VM
+                NumVCPUs          = 101
+                VMXPathname       = 103
+                TeamPathname      = 104
+                MemorySize        = 106
+                ReadOnly          = 107
+                InVMTeam          = 128
+                PowerState        = 129
+                ToolsState        = 152
+                IsRunning         = 196
+                SupportedFeatures = 197
+                IsRecording       = 236
+                IsReplaying       = 237
+            end
+        end
+        # on/off/reset options
+        module VMPowerOpt
+            Normal          = 0x0000
+            FromGuest       = 0x0004
+            SupressSnapshot = 0x0080
+            LaunchGUI       = 0x0200
+            StartPaused     = 0x1000
+        end
+        # Delete VM opt
+        module VM
+            DeleteDiskFiles = 0x0002
+        end
+        # R/W Variable types
+        module Var
+            Guest            = 1
+            ConfigRuntime    = 2
+            GuestEnvironment = 3
+        end
+    end
+
+    # Encapsulation for handles (mostly to make properties easy)
+    class Handle 
+        attr_accessor :handle
+        def initialize(handle)
+            @handle = handle
+        end
+        def getproperty(property)
+            VixAPI._getproperty(self,property)
+        end
+    end
+
+end
+
+
+module VixR
+
+    ## Global Default Options (constant)
+    def self.opt 
+        {
+            # connect opts
+            :hosttype => VixAPI::Const::Provider::Workstation,
+            :hostname => nil,
+            :user => nil,
+            :pass => nil,
+            :port => 8222,
+            
+            # vm opts
+            :vmxfile => nil,
+            :showgui => false,
+            :fromguest => true, # reset and poweroff will use the guest OS to shutdown
+            :deletefile => false,
+        }
+    end
+
+    # VixR.connect() => VixR::Host
+ 	def self.connect(opt={})
+		opt = VixR.opt.merge(opt)
+        # Figure out Workstation vs. Server
 		opt[:hosttype] = VixAPI::Const::Provider::Server2x if opt[:hostname] =~ /^http(s)?:\/\/.*/ 
 		case opt[:hosttype]
-		when Const::Provider::Workstation
-			session = _connect_wkstn()
-		when Const::Provider::Server2x
-			
-			session = _connect_server(
-				VixAPI::Const::Provider::Server2x,
-				opt[:hostname],
-				opt[:port],
-				opt[:user],
-				opt[:pass]
-			)
+		when VixAPI::Const::Provider::Workstation
+			session = VixAPI.connect()
+		when VixAPI::Const::Provider::Server2x
+            session = VixAPI.connect(VixAPI::Const::Provider::Server2x,
+                                        opt[:hostname],
+                                        opt[:port],
+                                        opt[:user],
+                                        opt[:pass])
 		else
 			raise "This VMware host provider type is not supported (you probably should use VMware Server 2.x)"
 		end
 
 		raise "could not get session" if not session
-
-		@host = Host.new(self,session)
+        
+		@host = Host.new(session.handle)
 		@host
 	end	
 
-	class VM
-		def initialize(vixapi, vmhandle)
-			@api = vixapi
-			@vm = vmhandle
-		end
-		def power_on(opt)
-			if not opt.class < Integer
-				opts = @api.opt.merge(opt)
-				opt = 0
-				opt += Const::VMPowerOpt::LaunchGUI if opts[:showgui]
-				opt += Const::VMPowerOpt::StartPaused if opts[:startpaused]
-			end
-			@api._power_on(@vm,opt)
-		end
-		def power_off(fromguest=@api.opt[:poweroffinguest])
-			if fromguest
-				op = Const::VMPowerOpt::FromGuest
-			else
-				op = Const::VMPowerOpt::Normal
-			end	
-			@api._power_off(@vm,op)
-		end
-		def reset(fromguest=@api.opt[:poweroffinguest])
-			if fromguest
-				op = Const::VMPowerOpt::FromGuest
-			else
-				op = Const::VMPowerOpt::Normal
-			end	
-			@api._reset(@vm,op)
-		end
-		def pause
-			@api._pause(@vm)
-		end
-		def unpause
-			@api._unpause(@vm)
-		end
-		def suspend
-			@api._suspend(@vm)
-		end
+    #
+    # Host class
+    #
+	class Host < VixAPI::Handle
 
-		def write_var(name,val,type=Const::VarType::Guest)
-			@api._write_var(@vm,type,name,val)
-		end
-		def read_var(name, type=Const::VarType::Guest)
-			@api._read_var(@vm,type,name)
-		end
-		def upgrade_vhardware()
-			@api._upgrade_vhardware(@vm)
-		end
-		def capture_screen_image                                                                                                                      
-            @api._capture_screen_image(@vm)                                                                                                   
-        end                                                                                                                                   
-                                                                                                                                       
-        def cp_to_host(src,dst)                                                                                                               
-            @api._copy_file_from_guest_to_host(@vm,src,dst)                                                                                   
-        end                                                                                                                                   
-                                                                                                                                              
-        def cp_to_guest(src,dst)                                                                                                              
-            @api._copy_file_from_host_to_guest(@vm,src,dst)                                                                                   
-        end                                                                                                                                   
-                                                                                                                                              
-        def mkdir_guest(path)                                                                                                                 
-            @api._create_directory_in_guest(@vm, path)                                                                                        
-        end                                                                                                                                   
-                                                                                                                                              
-        def mktemp_guest                                                                                                                      
-            @api._create_temp_file_in_guest(@vm)                                                                                              
-        end                                                                                                                                   
-                                                                                                                                              
-        def rmdir_guest                                                                                                                       
-            @api._delete_directory_in_guest(@vm, path)                                                                                        
-        end                                                                                                                                   
-                                                                                                                                              
-        def rm_guest                                                                                                                          
-            @api._delete_file_in_guest(@vm, path)                                                                                             
-        end                                                                                                                                   
-                                                                                                                                              
-        def directory_exists?                                                                                                                 
-            @api._directory_exists_in_guest(@vm, path)                                                                                        
-        end      
+        # open_vmx(vmxfilepath) => VixR::VM
+        def open_vmx(path=nil,opt={})
+            opt = VixR.opt.merge(opt)
+            path ||= opt[:vmxfile]
+            vmhandle = VixAPI._open_vmx(self,path)
+            raise "Could not open vmx file (#{path})" if not vmhandle
+            vm = VM.new(vmhandle.handle)
+            vm
+        end
+        
+        # disconnect(hostHandle) => true
+        #
+        # This should automatically be called automatically when the program exits
+        def disconnect()
+            VixAPI._disconnect(@handle)
+        end
+
+        #
+        # Properties
+        #
+        def hosttype
+            self.getproperty(VixAPI::Const::Property::Host::HostType)
+        end
+
+        def api_version
+            self.getproperty(VixAPI::Const::Property::Host::APIVersion)
+        end
+	end
+
+    #
+    # VM class
+    #
+	class VM < VixAPI::Handle
+        
+        # power_on(:showgui=>false, :startpaused=>false) => true
+        #
+        # Power on the VM
+        def power_on(opt={})
+            opt = VixR.opt.merge(opt)
+            opts = 0
+            opts |= VixAPI::Const::VMPowerOpt::LaunchGUI if opt[:showgui]
+            opts |= VixAPI::Const::VMPowerOpt::StartPaused if opt[:startpaused]
+            VixAPI._power_on(self,opts)            
+        end
+
+        # power_off(:fromguest=>true) => true
+        def power_off(opt={})
+            opt = VixR.opt.merge(opt)
+            opts = 0
+            opts |= VixAPI::Const::VMPowerOpt::FromGuest if opt[:fromguest]
+            VixAPI._power_off(self,opts)
+        end
+
+        # pause()
+        def pause
+            VixAPI._pause(self)
+        end
+
+        # suspend()
+        def suspend
+            VixAPI._suspend(self)
+        end
+
+        # unpause()
+        def unpause
+            VixAPI._unpause(self)
+        end
+
+        # reset(:fromguest=>true)
+        def reset(opt={})
+            opt = VixR.opt.merge(opt)
+            opts = 0
+            opts |= VixAPI::Const::VMPowerOpt::FromGuest if opt[:fromguest]
+            VixAPI._reset(self,opts)
+        end
+
+        # delete(:deletefiles=>false)
+        def delete(opt={})
+            opt = VixR.opt.merge(opt)
+            opts = 0
+            opts |= VixAPI::Const::VM::DeleteDiskFiles if opt[:deletefiles]
+            VixAPI._delete(self,opts)
+        end
+
+        # upgrade_vhardware()
+        def upgrade_vhardware
+            VixAPI._upgrade_vhardware(self)
+        end
+
+        # read_var()
+        def read_var(name,vartype=VixAPI::Config::Var::Guest)
+            VixAPI._read_var(self,vartype,name)
+        end
+
+        # write_var()
+        def write_var(name,val,type=VixAPI::Config::Var::Guest)
+            VixAPI._write_var(self,type,name,val)
+        end
+
+        #
+        # Properties
+        #
+        def num_vcpus
+            self.getproperty(VixAPI::Const::Property::VM::NumVCPUs)
+        end
+
+        def vmx_path
+            self.getproperty(VixAPI::Const::Property::VM::VMXPathname)
+        end
+        
+        def team_path
+            self.getproperty(VixAPI::Const::Property::VM::TeamPathname)
+        end
+        
+        def mem_size
+            self.getproperty(VixAPI::Const::Property::VM::MemorySize)
+        end
+        
+        def read_only?
+            self.getproperty(VixAPI::Const::Property::VM::ReadOnly)
+        end
+        
+        def vm_team?
+            self.getproperty(VixAPI::Const::Property::VM::InVMTeam)
+        end
+        
+        def power_state
+            self.getproperty(VixAPI::Const::Property::VM::PowerState)
+        end
+        
+        def tools_state
+            self.getproperty(VixAPI::Const::Property::VM::ToolsState)
+        end
+        
+        def running?
+            self.getproperty(VixAPI::Const::Property::VM::IsRunning)
+        end
+
+        def features
+            self.getproperty(VixAPI::Const::Property::VM::SupportedFeatures)
+        end
+
+        def recording?
+            self.getproperty(VixAPI::Const::Property::VM::IsRecording)
+        end
+        
+        def replaying?
+            self.getproperty(VixAPI::Const::Property::VM::IsReplaying)
+        end
 	end	
 
-	class Host
-		def initialize(vixapi,host)
-			@api = vixapi
-			@session = host
-		end	
-		def vmx_open(path=opt[:vmxfile])	
-			vmhandle = @api._vmx_open(@session,path)
-			raise "Could not open vmx file (#{path})" if not vmhandle
-			vm = VM.new(@api,vmhandle) 
-			vm
-		end
-	end
+
 end
 
 
 ## init C runtime (only once)
-VixAPI.new.start
+VixAPI.start
 
-# Test script
-vix = VixAPI.new
-host = vix.connect 
-vm = host.vmx_open("/data/tmp/BPSLABS-W2K3-01/Windows Server 2003 Enterprise Edition.vmx")
-vm.read_var("poo")
-#vm.power_on(:showgui=>true)
-
-#puts "Powered on"
+#VixAPI.connect
 

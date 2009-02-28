@@ -107,7 +107,7 @@ _create_temp_file_in_guest(VALUE self, VALUE rvm)
 	VixError err; 
 	char *tempfilepath;
 	
-	job = Vix_VM_CreateTempFileInGuest(vm, 0, VIX_INVALID_HANDLE, NULL, NULL);
+	job = VixVM_CreateTempFileInGuest(vm, 0, VIX_INVALID_HANDLE, NULL, NULL);
 	err = VixJob_Wait(job, VIX_PROPERTY_JOB_RESULT_ITEM_NAME, &tempfilepath, VIX_PROPERTY_NONE);
 
 	if(VIX_FAILED(err)) 
@@ -131,7 +131,7 @@ _delete_directory_in_guest(VALUE self, VALUE rvm, VALUE rpath)
 
 	char *path = StringValueCStr(rpath);
 
-	job = Vix_VM_DeleteDirectoryInGuest(vm, path, 0, NULL, NULL);
+	job = VixVM_DeleteDirectoryInGuest(vm, path, 0, NULL, NULL);
 	err = VixJob_Wait(job, VIX_PROPERTY_NONE);
 
 	if(VIX_FAILED(err)) 
@@ -155,7 +155,7 @@ _delete_file_in_guest(VALUE self, VALUE rvm, VALUE rpath)
 
 	char *path = StringValueCStr(rpath);
 
-	job = Vix_VM_DeleteFileInGuest(vm, path, NULL, NULL);
+	job = VixVM_DeleteFileInGuest(vm, path, NULL, NULL);
 	err = VixJob_Wait(job, VIX_PROPERTY_NONE);
 
 	if(VIX_FAILED(err)) 
@@ -179,7 +179,7 @@ _directory_exists_in_guest(VALUE self, VALUE rvm, VALUE rpath)
 
 	char *path = StringValueCStr(rpath);
 
-	job = Vix_VM_DirectoryExistsInGuest(vm, path, NULL, NULL);
+	job = VixVM_DirectoryExistsInGuest(vm, path, NULL, NULL);
 	err = VixJob_Wait(job, VIX_PROPERTY_NONE);
 
 	if(VIX_FAILED(err)) 

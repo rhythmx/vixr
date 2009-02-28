@@ -2,3 +2,42 @@ vixR - A (new&improved) Ruby bridge to the VMware VIX API - 2009, Sean Bradly
 
 This project and all files it includes are released under the BSD license.
 
+--------------------------------------------------------------------------------
+| Compiling / Installing
+--------------------------------------------------------------------------------
+ruby ./extconf.rb --with-vixapi-include=/usr/include/vmware-vix
+make
+make install
+
+--------------------------------------------------------------------------------
+| Developing
+--------------------------------------------------------------------------------
+
+Ruby API
+
+module VixAPI
+	def raw_C_vixapi_method_wrapper
+	end	
+end
+
+module VixR
+	
+	self.connect()
+	end
+
+	class Host # As returned by VixR.connect
+	end
+
+	class VM
+	end
+
+	class GuestOS < VM
+	end
+
+	class Property
+	end
+
+	class Snapshot
+	end
+	
+end

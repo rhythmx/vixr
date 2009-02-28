@@ -1,16 +1,156 @@
 #include <stdio.h>
 #include <ruby.h>
-
-#include "vix.h"
+#include <vix.h>
 
 /* local methods */
-#include "vm.h"
-#include "host.h"
+#include "functions.h"
 
 /*
  * Globals
  */
 static VALUE started = Qnil;
+static VALUE rb_cVixAPI; /* module VixAPI    */
+
+VALUE _getproperty_int(VixHandle handle, int propid)
+{
+	VixError err;
+	int result;
+
+	err = Vix_GetProperties(handle,propid,&result,VIX_PROPERTY_NONE);
+	if (VIX_FAILED(err)) 
+	{
+		fprintf(stderr,"Error while attempting to retrieve INT property (id %d)\n",propid);
+		return Qnil;
+	}
+	
+	return INT2NUM(result);
+}
+
+VALUE _getproperty_str(VixHandle handle, int propid)
+{
+	VixError err;
+	char *result;
+	VALUE retval;
+
+	err = Vix_GetProperties(handle,propid,&result,VIX_PROPERTY_NONE);
+	if (VIX_FAILED(err)) 
+	{
+		fprintf(stderr,"Error while attempting to retrieve string property (id %d)\n",propid);
+		return Qnil;
+	}
+	
+	retval = rb_str_new2(result);
+	Vix_FreeBuffer(result);
+	return retval;
+}
+
+VALUE _getproperty_bool(VixHandle handle, int propid)
+{
+	VixError err;
+	char result;
+
+	err = Vix_GetProperties(handle,propid,&result,VIX_PROPERTY_NONE);
+	if (VIX_FAILED(err)) 
+	{
+		fprintf(stderr,"Error while attempting to retrieve BOOL property (id %d)\n",propid);
+		return Qnil;
+	}
+
+	//fprintf(stderr,"attempting to retrieve BOOL property (id %d), res=%d\n",propid,result);
+	
+	return (result)?Qtrue:Qfalse;
+}
+
+VALUE _getproperty_handle(VixHandle handle, int propid)
+{
+	VixError err;
+	VixHandle result;
+	char str[200];
+
+	err = Vix_GetProperties(handle,propid,&result,VIX_PROPERTY_NONE);
+	if (VIX_FAILED(err)) 
+	{
+		fprintf(stderr,"Error while attempting to retrieve HANDLE property (id %d)\n",propid);
+		return Qnil;
+	}
+	
+	sprintf(str,"VixAPI::Handle.new(%d)",result);
+	return  rb_eval_string(str);
+}
+
+VALUE _getproperty_int64(VixHandle handle, int propid)
+{
+	VixError err;
+	int64 result;
+
+	err = Vix_GetProperties(handle,propid,&result,VIX_PROPERTY_NONE);
+	if (VIX_FAILED(err)) 
+	{
+		fprintf(stderr,"Error while attempting to retrieve INT64 property (id %d)\n",propid);
+		return Qnil;
+	}
+	
+	return INT2NUM(result);
+}
+
+VALUE _getproperty_blob(VixHandle handle, int propid)
+{
+	VixError err;
+	VALUE retval;
+	struct {int len;char *data;} result;
+
+	err = Vix_GetProperties(handle,propid,&result,VIX_PROPERTY_NONE);
+	if (VIX_FAILED(err)) 
+	{
+		fprintf(stderr,"Error while attempting to retrieve BLOB property (id %d)\n",propid);
+		return Qnil;
+	}
+	
+	retval = rb_str_new(result.data,result.len);
+	Vix_FreeBuffer(result.data);
+	return retval;
+}
+
+
+VALUE _getproperty(VALUE self, VALUE rhandleobj, VALUE rpropid)
+{
+	VixHandle handle;
+	VixError err;
+	VixPropertyType type;
+	int propid;
+
+	handle = NUM2INT(rb_iv_get(rhandleobj,"@handle"));
+	propid = NUM2INT(rpropid);
+
+	/* Get the type of data to return */
+	if(VIX_FAILED(err = Vix_GetPropertyType(handle,propid,&type)))
+	{
+		fprintf(stderr,"Could not determine property type: %s\n",Vix_GetErrorText(err,NULL));
+		return Qnil;
+	}
+
+	/* do diff things based on prop type */
+	switch(type)
+	{
+	case VIX_PROPERTYTYPE_INTEGER:
+		return _getproperty_int(handle,propid);
+	case VIX_PROPERTYTYPE_STRING:
+		return _getproperty_str(handle,propid);
+	case VIX_PROPERTYTYPE_BOOL:
+		return _getproperty_bool(handle,propid);
+	case VIX_PROPERTYTYPE_HANDLE:
+		return _getproperty_handle(handle,propid);
+	case VIX_PROPERTYTYPE_INT64:
+		return _getproperty_int64(handle,propid);
+	case VIX_PROPERTYTYPE_BLOB:
+		return _getproperty_blob(handle,propid);
+	case VIX_PROPERTYTYPE_ANY: default:
+		break;
+	}
+
+	fprintf(stderr,"Unknown Property Type (%d)\n",type);
+	return Qnil;
+}
 
 VALUE 
 vix_start(VALUE self)
@@ -27,123 +167,31 @@ vix_start(VALUE self)
 	return Qnil;
 }
 
-/*
-VALUE
-_vix_event_loop(VALUE self)
-{
-	int session = NUM2INT(rb_iv_get(self,"@session"));
-	Vix_PumpEvents(session,0);
-	return Qnil;
-}
-*/ 
-
 void 
-Init_vixapi() {
-	VALUE vixapi = rb_define_class("VixAPI", rb_cObject);
+Init_vixapi() 
+{
+	rb_cVixAPI = rb_define_module("VixAPI");
 
 	/* global init function */
-	rb_define_method(vixapi, "start", vix_start, 0);
+	rb_define_singleton_method(rb_cVixAPI, "start", vix_start, 0);
 
-	/* instance methods */
-	rb_define_method(vixapi,"_connect_server",_connect_server,5);
-	rb_define_method(vixapi,"_connect_wkstn",_connect_wkstn,0);
-	rb_define_method(vixapi,"_vmx_open",_vmx_open,2);
-	rb_define_method(vixapi,"_delete",_delete,2);
-	rb_define_method(vixapi,"_read_var",_read_var,3);
-	rb_define_method(vixapi,"_write_var",_write_var,4);
-	rb_define_method(vixapi,"_upgrade_vhardware",_upgrade_vhardware,1);
-	/* VM Power Methods */
-	rb_define_method(vixapi,"_power_on",_power_on,2);
-	rb_define_method(vixapi,"_power_off",_power_on,2);
-	rb_define_method(vixapi,"_reset",_power_on,2);
-	rb_define_method(vixapi,"_pause",_power_on,1);
-	rb_define_method(vixapi,"_suspend",_power_on,1);
-	rb_define_method(vixapi,"_unpause",_power_on,1);
+	/* VixAPI wrapper methods */
+	rb_define_singleton_method(rb_cVixAPI,"_connect",_connect,5);
+	rb_define_singleton_method(rb_cVixAPI,"_disconnect",_disconnect,1);
+	rb_define_singleton_method(rb_cVixAPI,"_open_vmx",_open_vmx,2);
+
+	/* VM methods */
+	rb_define_singleton_method(rb_cVixAPI,"_power_on",_power_on,2);
+	rb_define_singleton_method(rb_cVixAPI,"_power_off",_power_off,2);
+	rb_define_singleton_method(rb_cVixAPI,"_pause",_pause,1);
+	rb_define_singleton_method(rb_cVixAPI,"_suspend",_suspend,1);
+	rb_define_singleton_method(rb_cVixAPI,"_unpause",_unpause,1);
+	rb_define_singleton_method(rb_cVixAPI,"_reset",_reset,2);
+	rb_define_singleton_method(rb_cVixAPI,"_delete",_delete,2);
+	rb_define_singleton_method(rb_cVixAPI,"_upgrade_vhardware",_upgrade_vhardware,1);
+	rb_define_singleton_method(rb_cVixAPI,"_read_var",_read_var,3);
+	rb_define_singleton_method(rb_cVixAPI,"_write_var",_write_var,4);
 	
-
-	/* rb_define_method(vixapi,"_vix_event_loop",_vix_event_loop); */
-	
-	/* define constants (ruby form of vix.h) */
-	{
-		VALUE constants  = rb_define_module_under(vixapi,"Const");
-		VALUE provider   = rb_define_module_under(constants,"Provider");
-		VALUE poweropt   = rb_define_module_under(constants,"VMPowerOpt");
-		VALUE vartype    = rb_define_module_under(constants,"VarType");
-		VALUE eventtype  = rb_define_module_under(constants,"EventType");
-		VALUE handletype = rb_define_module_under(constants,"HandleType");
-		VALUE property   = rb_define_module_under(constants,"PropertyType"); 
-		VALUE props      = rb_define_module_under(constants,"Property");
-		VALUE propshost  = rb_define_module_under(props, "Host");
-		VALUE propsvm    = rb_define_module_under(props, "VM");
-		VALUE propssnap  = rb_define_module_under(props,"Snapshot");
-
-		/* NULL Handle */
-		rb_define_const(constants, "InvalidHandle", INT2NUM(VIX_INVALID_HANDLE));
-
-		/* Var Types */
-		rb_define_const(vartype, "Guest",            INT2NUM(VIX_VM_GUEST_VARIABLE));
-		rb_define_const(vartype, "ConfigRuntime",    INT2NUM(VIX_VM_CONFIG_RUNTIME_ONLY));
-		rb_define_const(vartype, "GuestEnvironment", INT2NUM(VIX_GUEST_ENVIRONMENT_VARIABLE));
-
-		/* Event Types */
-		rb_define_const(eventtype, "JobCompleted", INT2NUM(VIX_EVENTTYPE_JOB_COMPLETED));
-		rb_define_const(eventtype, "JobProgress",  INT2NUM(VIX_EVENTTYPE_JOB_PROGRESS));
-		rb_define_const(eventtype, "FindItem",     INT2NUM(VIX_EVENTTYPE_FIND_ITEM));
-
-		/* VixProperty Types */
-		rb_define_const(property, "Any",     INT2NUM(VIX_PROPERTYTYPE_ANY));
-		rb_define_const(property, "Integer", INT2NUM(VIX_PROPERTYTYPE_INTEGER));
-		rb_define_const(property, "String",  INT2NUM(VIX_PROPERTYTYPE_STRING));
-		rb_define_const(property, "Bool",    INT2NUM(VIX_PROPERTYTYPE_BOOL));
-		rb_define_const(property, "Handle",  INT2NUM(VIX_PROPERTYTYPE_HANDLE));
-		rb_define_const(property, "Int64",   INT2NUM(VIX_PROPERTYTYPE_INT64));
-		rb_define_const(property, "Blob",    INT2NUM(VIX_PROPERTYTYPE_BLOB));
-		
-		/* VixProperties */		
-		rb_define_const(props,     "None",              INT2NUM(VIX_PROPERTY_NONE));
-		rb_define_const(props,     "MetadataContainer", INT2NUM(VIX_PROPERTY_META_DATA_CONTAINER));
-		rb_define_const(props,     "FoundItemLocation", INT2NUM(VIX_PROPERTY_FOUND_ITEM_LOCATION));
-		rb_define_const(propshost, "HostType",          INT2NUM(VIX_PROPERTY_HOST_HOSTTYPE));
-		rb_define_const(propshost, "APIVersion",        INT2NUM(VIX_PROPERTY_HOST_API_VERSION));
-		rb_define_const(propsvm,   "NumCPUs",           INT2NUM(VIX_PROPERTY_VM_NUM_VCPUS));
-		rb_define_const(propsvm,   "VMXPath",           INT2NUM(VIX_PROPERTY_VM_VMX_PATHNAME));
-		rb_define_const(propsvm,   "VMTeamPath",        INT2NUM(VIX_PROPERTY_VM_VMTEAM_PATHNAME));
-		rb_define_const(propsvm,   "MemSize",           INT2NUM(VIX_PROPERTY_VM_MEMORY_SIZE));
-		rb_define_const(propsvm,   "ReadOnly",          INT2NUM(VIX_PROPERTY_VM_READ_ONLY));
-		rb_define_const(propsvm,   "InVMTeam",          INT2NUM(VIX_PROPERTY_VM_IN_VMTEAM));
-		rb_define_const(propsvm,   "PowerState",        INT2NUM(VIX_PROPERTY_VM_POWER_STATE));
-		rb_define_const(propsvm,   "ToolsState",        INT2NUM(VIX_PROPERTY_VM_TOOLS_STATE));
-		rb_define_const(propsvm,   "IsRunning",         INT2NUM(VIX_PROPERTY_VM_IS_RUNNING));
-		rb_define_const(propsvm,   "SupportedFeatures", INT2NUM(VIX_PROPERTY_VM_SUPPORTED_FEATURES));
-		rb_define_const(propsvm,   "IsRecording",       INT2NUM(VIX_PROPERTY_VM_IS_RECORDING));
-		rb_define_const(propsvm,   "IsPlaying",         INT2NUM(VIX_PROPERTY_VM_IS_REPLAYING));
-		rb_define_const(propssnap, "DisplayName",       INT2NUM(VIX_PROPERTY_SNAPSHOT_DISPLAYNAME));
-		rb_define_const(propssnap, "Description",       INT2NUM(VIX_PROPERTY_SNAPSHOT_DESCRIPTION));
-		rb_define_const(propssnap, "PowerState",        INT2NUM(VIX_PROPERTY_SNAPSHOT_POWERSTATE));
-		rb_define_const(propssnap, "IsReplayable",      INT2NUM(VIX_PROPERTY_SNAPSHOT_IS_REPLAYABLE));
-		
-		/* VixHandle types */
-		rb_define_const(handletype, "None",              INT2NUM(VIX_HANDLETYPE_NONE));
-		rb_define_const(handletype, "Host",              INT2NUM(VIX_HANDLETYPE_HOST));
-		rb_define_const(handletype, "VM",                INT2NUM(VIX_HANDLETYPE_VM));
-		rb_define_const(handletype, "Network",           INT2NUM(VIX_HANDLETYPE_NETWORK));
-		rb_define_const(handletype, "Job",               INT2NUM(VIX_HANDLETYPE_JOB));
-		rb_define_const(handletype, "Snapshot",          INT2NUM(VIX_HANDLETYPE_SNAPSHOT));
-		rb_define_const(handletype, "PropertyList",      INT2NUM(VIX_HANDLETYPE_PROPERTY_LIST));
-		rb_define_const(handletype, "MetadataContainer", INT2NUM(VIX_HANDLETYPE_METADATA_CONTAINER));
-
-		/* VMware host types */
-		rb_define_const(provider, "Default",     INT2NUM(VIX_SERVICEPROVIDER_DEFAULT));
-		rb_define_const(provider, "Server1x",    INT2NUM(VIX_SERVICEPROVIDER_VMWARE_SERVER));
-		rb_define_const(provider, "Server2x",    INT2NUM(VIX_SERVICEPROVIDER_VMWARE_VI_SERVER));
-		rb_define_const(provider, "Workstation", INT2NUM(VIX_SERVICEPROVIDER_VMWARE_WORKSTATION));
-
-		/* VMPower function options */
-		rb_define_const(poweropt,"Normal",           INT2NUM(VIX_VMPOWEROP_NORMAL));
-		rb_define_const(poweropt,"FromGuest",        INT2NUM(VIX_VMPOWEROP_FROM_GUEST));
-		rb_define_const(poweropt,"SuppressSnapshot", INT2NUM(VIX_VMPOWEROP_SUPPRESS_SNAPSHOT_POWERON));
-		rb_define_const(poweropt,"LaunchGUI",        INT2NUM(VIX_VMPOWEROP_LAUNCH_GUI));
-		rb_define_const(poweropt,"StartPaused",      INT2NUM(VIX_VMPOWEROP_START_VM_PAUSED));
-		
-	}
+	/* Misc methods */
+	rb_define_singleton_method(rb_cVixAPI,"_getproperty",_getproperty,2);
 }
