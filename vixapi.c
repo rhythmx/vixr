@@ -53,9 +53,17 @@ Init_vixapi()
 
 	/* VM Guest Methods */
 	rb_define_singleton_method(rb_cVixAPI,"_capture_screen_image",_capture_screen_image,1);
+	rb_define_singleton_method(rb_cVixAPI,"_wait_for_tools",_wait_for_tools,2);
+	rb_define_singleton_method(rb_cVixAPI,"_copy_file_from_guest_to_host",_copy_file_from_guest_to_host, 3);
+	rb_define_singleton_method(rb_cVixAPI,"_copy_file_from_host_to_guest",_copy_file_from_host_to_guest, 3);
+	rb_define_singleton_method(rb_cVixAPI,"_create_directory_in_guest", _create_directory_in_guest, 2);
+	rb_define_singleton_method(rb_cVixAPI,"_create_temp_file_in_guest", _create_temp_file_in_guest, 1);
+	rb_define_singleton_method(rb_cVixAPI,"_delete_directory_in_guest", _delete_directory_in_guest, 2);
+	rb_define_singleton_method(rb_cVixAPI,"_delete_file_in_guest", _delete_file_in_guest, 2);
+	rb_define_singleton_method(rb_cVixAPI,"_directory_exists_in_guest", _directory_exists_in_guest, 2);
 	rb_define_singleton_method(rb_cVixAPI,"_login_in_guest",_login_in_guest,3);
 	rb_define_singleton_method(rb_cVixAPI,"_logout_from_guest",_logout_from_guest,1);
-	
+   
 	/* Misc methods */
 	rb_define_singleton_method(rb_cVixAPI,"_getproperty",_getproperty,2);
 }

@@ -291,15 +291,50 @@ module VixR
             pngdata = VixAPI._capture_screen_image(self)
         end
 
+        # wait_for_tools(timeout=nil)
+        def wait_for_tools(timeout=nil)
+            timeout ||= VixR.opt[:timeout]
+            timeout ||= 300 # 5 minutes
+            VixAPI._wait_for_tools(self,timeout)
+        end
+
+        def cp_to_host(src,dst)
+            VixAPI._copy_file_from_guest_to_host(self,src,dst)
+        end
+
+        def cp_to_guest(src,dst)
+            VixAPI._copy_file_from_host_to_guest(self,src,dst)
+        end
+
+        def mkdir(path)
+            VixAPI._create_directory_in_guest(self,path)
+        end
+
+        # mktemp() # => tempfile_pathname
+        def mktemp()
+            VixAPI._create_temp_file_in_guest(self)
+        end
+
+        def rmdir(path)
+            VixAPI._delete_directory_in_guest(self,path)
+        end
+
+        def rm(path)
+            VixAPI._delete_file_in_guest(self,path)
+        end
+
+        def dir_exists?(path)
+            VixAPI._directory_exists_in_guest(self,path)
+        end
+
         # login(user=nil,pass=>nil) # => also reads :username, :password from $opt
         def login(user=nil,pass=nil)
-            user = VixR.opt[:username] if not user
-            pass = VixR.opt[:password] if not pass
+            user ||= VixR.opt[:username]
+            pass ||= VixR.opt[:password]
             raise "You must provide a username and password via the options" if not user or not pass
             VixAPI._login_in_guest(self,user,pass)
         end
 
-        # logout
         def logout
             VixAPI._logout_from_guest(self)
         end
