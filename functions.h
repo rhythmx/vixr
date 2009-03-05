@@ -16,5 +16,13 @@ VALUE _upgrade_vhardware(VALUE, VALUE);
 VALUE _read_var(VALUE, VALUE, VALUE, VALUE);
 VALUE _write_var(VALUE, VALUE, VALUE, VALUE, VALUE);
 
+/* VM Guest functions */
+VALUE _capture_screen_image(VALUE, VALUE);
+VALUE _wait_for_tools(VALUE,VALUE,VALUE);
+VALUE _copy_file_from_guest_to_host(VALUE,VALUE,VALUE,VALUE);
+VALUE _copy_file_from_host_to_guest(VALUE,VALUE,VALUE,VALUE);
+VALUE _create_directory_in_guest(VALUE, VALUE, VALUE);
+VALUE _create_temp_file_in_guest(VALUE, VALUE);
+
 /* Misc functions */
 VALUE _getproperty(VALUE, VALUE, VALUE);

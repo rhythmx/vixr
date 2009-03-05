@@ -8,10 +8,11 @@ _capture_screen_image(VALUE self, VALUE rvm)
 	VixHandle vm = NUM2INT(rvm);
 	VixHandle job;
 	VixError err; 
-
-	job = VixVM_CaptureScreenImage(vm, VIX_CAPTURESCREENFORMAT_PNG, VIX_INVALID_HANDLE, NULL, NULL);
+	
+	job = VixVM_CaptureScreenImage(vm, VIX_CAPTURESCREENFORMAT_PNG, 
+								   VIX_INVALID_HANDLE, NULL, NULL);
 	err = VixJob_Wait(job, VIX_PROPERTY_NONE);
-
+	
 	if(VIX_FAILED(err)) 
 	{
 		fprintf(stderr,"Failed to capture screen on virtual machine: %s\n", Vix_GetErrorText(err,NULL));
@@ -25,6 +26,28 @@ _capture_screen_image(VALUE self, VALUE rvm)
 }
 
 VALUE 
+_wait_for_tools(VALUE self, VALUE rvm, VALUE rtimeout)
+{
+	VixHandle vm = NUM2INT(rvm);
+	VixHandle job;
+	VixError err;
+
+	int timeout = NUM2INT(rtimeout);
+
+	job = VixVM_WaitForToolsInGuest(vm,timeout,NULL,NULL);
+	err = VixJob_Wait(job, VIX_PROPERTY_NONE);
+	Vix_ReleaseHandle(job);
+	if(VIX_ERROR(err))
+	{
+		fprintf(stderr,"Error waiting for VMtools in guest: %n\n",
+				Vix_GetErrorTest(err,NULL));
+		return Qnil;
+	}
+	
+	return Qtrue;o
+}
+
+VALUE 
 _copy_file_from_guest_to_host(VALUE self, VALUE rvm, VALUE rsrc, VALUE rdst)
 {
 	VixHandle vm = NUM2INT(rvm);
@@ -34,18 +57,19 @@ _copy_file_from_guest_to_host(VALUE self, VALUE rvm, VALUE rsrc, VALUE rdst)
 	char *src = StringValueCStr(rsrc);
 	char *dst = StringValueCStr(rdst);
 
-	job = VixVM_CopyFileFromGuestToHost(vm, src, dst, 0, VIX_INVALID_HANDLE, NULL, NULL);
+	job = VixVM_CopyFileFromGuestToHost(vm, src, dst, 0, 
+										VIX_INVALID_HANDLE, 
+										NULL, NULL);
 	err = VixJob_Wait(job, VIX_PROPERTY_NONE);
+	Vix_ReleaseHandle(job);
 
 	if(VIX_FAILED(err)) 
 	{
-		fprintf(stderr,"Failed to copy file to host: %s\n", Vix_GetErrorText(err,NULL));
-		Vix_ReleaseHandle(job);
+		fprintf(stderr,"Failed to copy file to host: %s\n", 
+				Vix_GetErrorText(err,NULL));
 		return Qnil;
 	}
 
-	Vix_ReleaseHandle(job);
-	
 	return Qtrue;
 }
 
@@ -60,18 +84,19 @@ _copy_file_from_host_to_guest(VALUE self, VALUE rvm, VALUE rsrc, VALUE rdst)
 	char *dst = StringValueCStr(rdst);
 
 	
-	job = VixVM_CopyFileFromHostToGuest(vm, src, dst, 0, VIX_INVALID_HANDLE, NULL, NULL);
+	job = VixVM_CopyFileFromHostToGuest(vm, src, dst, 0, 
+										VIX_INVALID_HANDLE, 
+										NULL, NULL);
 	err = VixJob_Wait(job, VIX_PROPERTY_NONE);
+	Vix_ReleaseHandle(job);
 
 	if(VIX_FAILED(err)) 
 	{
-		fprintf(stderr,"Failed to copy file to guest: %s\n", Vix_GetErrorText(err,NULL));
-		Vix_ReleaseHandle(job);
+		fprintf(stderr,"Failed to copy file to guest: %s\n", 
+				Vix_GetErrorText(err,NULL));
 		return Qnil;
 	}
 
-	Vix_ReleaseHandle(job);
-	
 	return Qtrue;
 }
 
@@ -86,15 +111,14 @@ _create_directory_in_guest(VALUE self, VALUE rvm, VALUE rpath)
 
 	job = VixVM_CreateDirectoryInGuest(vm, path, VIX_INVALID_HANDLE, NULL, NULL);
 	err = VixJob_Wait(job, VIX_PROPERTY_NONE);
+	Vix_ReleaseHandle(job);
 
 	if(VIX_FAILED(err)) 
 	{
-		fprintf(stderr,"Failed to create directory on guest: %s\n", Vix_GetErrorText(err,NULL));
-		Vix_ReleaseHandle(job);
+		fprintf(stderr,"Failed to create directory on guest: %s\n", 
+				Vix_GetErrorText(err,NULL));
 		return Qnil;
 	}
-
-	Vix_ReleaseHandle(job);
 	
 	return Qtrue;
 }
@@ -108,16 +132,17 @@ _create_temp_file_in_guest(VALUE self, VALUE rvm)
 	char *tempfilepath;
 	
 	job = VixVM_CreateTempFileInGuest(vm, 0, VIX_INVALID_HANDLE, NULL, NULL);
-	err = VixJob_Wait(job, VIX_PROPERTY_JOB_RESULT_ITEM_NAME, &tempfilepath, VIX_PROPERTY_NONE);
+	err = VixJob_Wait(job, VIX_PROPERTY_JOB_RESULT_ITEM_NAME, 
+					  &tempfilepath, VIX_PROPERTY_NONE);
+	Vix_ReleaseHandle(job);
 
 	if(VIX_FAILED(err)) 
 	{
-		fprintf(stderr,"Failed to create temp file on guest: %s\n", Vix_GetErrorText(err,NULL));
-		Vix_ReleaseHandle(job);
+		fprintf(stderr,"Failed to create temp file on guest: %s\n", 
+				Vix_GetErrorText(err,NULL));
 		return Qnil;
 	}
 
-	Vix_ReleaseHandle(job);
 
 	return rb_str_new2(tempfilepath);
 }
@@ -133,15 +158,14 @@ _delete_directory_in_guest(VALUE self, VALUE rvm, VALUE rpath)
 
 	job = VixVM_DeleteDirectoryInGuest(vm, path, 0, NULL, NULL);
 	err = VixJob_Wait(job, VIX_PROPERTY_NONE);
+	Vix_ReleaseHandle(job);
 
 	if(VIX_FAILED(err)) 
 	{
-		fprintf(stderr,"Failed to directory on guest: %s\n", Vix_GetErrorText(err,NULL));
-		Vix_ReleaseHandle(job);
+		fprintf(stderr,"Failed to directory on guest: %s\n", 
+				Vix_GetErrorText(err,NULL));
 		return Qnil;
 	}
-
-	Vix_ReleaseHandle(job);
 	
 	return Qtrue;
 }
