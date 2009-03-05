@@ -1,4 +1,4 @@
-vixR - A (new&improved) Ruby bridge to the VMware VIX API - 2009, Sean Bradly
+VixR - A (new&improved) Ruby bridge to the VMware VIX API - 2009, Sean Bradly
 
 This project and all files it includes are released under the BSD license.
 
@@ -9,34 +9,50 @@ ruby ./extconf.rb --with-vixapi-include=/usr/include/vmware-vix
 make
 make install
 
+Note:
+
+If you don't want to see the compiler warnings you need to patchup 
+   `/usr/include/vmware-vix/basic-types.h' so that it doesn't redefine symbols.
+
 --------------------------------------------------------------------------------
 | Developing
 --------------------------------------------------------------------------------
 
 Ruby API
 
+# The C creates this module full of static wrapper methods around VixAPI
 module VixAPI
-	def raw_C_vixapi_method_wrapper
-	end	
+
+	   # See vixapi.c for list of methods supported
+	   def self._wrapper_methods
+	   end
+		
+       # This wraps the VixHandle C type
+	   class Handle
+	   		 def getproperty(id); end
+	   end
+
+	   # Useful constants are defined here
+	   module Const
+	   end
 end
 
+# Main Ruby style interface to the raw C
 module VixR
 	
+	# First function to call, returns a VixR::Host obj
 	self.connect()
 	end
 
-	class Host # As returned by VixR.connect
+	# Methods for a VM host.. like vmx_open(path)
+	class Host < VixAPI::Handle
 	end
 
-	class VM
+	# Methods for a guest VM
+	class VM < VixAPI::Handle
 	end
 
-	class GuestOS < VM
-	end
-
-	class Property
-	end
-
+	# TODO
 	class Snapshot
 	end
 	
