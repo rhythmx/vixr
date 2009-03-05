@@ -160,9 +160,10 @@ module VixR
 		opt[:hosttype] = VixAPI::Const::Provider::Server2x if opt[:hostname] =~ /^http(s)?:\/\/.*/ 
 		case opt[:hosttype]
 		when VixAPI::Const::Provider::Workstation
-			session = VixAPI.connect()
+			session = VixAPI._connect(VixAPI::Const::Provider::Workstation,
+                                         nil,0,nil,nil)
 		when VixAPI::Const::Provider::Server2x
-            session = VixAPI.connect(VixAPI::Const::Provider::Server2x,
+            session = VixAPI._connect(VixAPI::Const::Provider::Server2x,
                                         opt[:hostname],
                                         opt[:port],
                                         opt[:user],
@@ -281,6 +282,28 @@ module VixR
             VixAPI._write_var(self,type,name,val)
         end
 
+        #
+        # Guest / VM Tools Functions
+        #
+
+        # screendump(file->nil).. if file non nil, save to file, else return bytes
+        def screendump(file=nil)
+            pngdata = VixAPI._capture_screen_image(self)
+        end
+
+        # login(user=nil,pass=>nil) # => also reads :username, :password from $opt
+        def login(user=nil,pass=nil)
+            user = VixR.opt[:username] if not user
+            pass = VixR.opt[:password] if not pass
+            raise "You must provide a username and password via the options" if not user or not pass
+            VixAPI._login_in_guest(self,user,pass)
+        end
+
+        # logout
+        def logout
+            VixAPI._logout_from_guest(self)
+        end
+        
         #
         # Properties
         #

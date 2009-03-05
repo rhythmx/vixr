@@ -23,6 +23,17 @@ VALUE _copy_file_from_guest_to_host(VALUE,VALUE,VALUE,VALUE);
 VALUE _copy_file_from_host_to_guest(VALUE,VALUE,VALUE,VALUE);
 VALUE _create_directory_in_guest(VALUE, VALUE, VALUE);
 VALUE _create_temp_file_in_guest(VALUE, VALUE);
+VALUE _delete_directory_in_guest(VALUE, VALUE, VALUE);
+VALUE _delete_file_in_guest(VALUE, VALUE, VALUE);
+VALUE _directory_exists_in_guest(VALUE, VALUE, VALUE);
+VALUE _login_in_guest(VALUE, VALUE, VALUE, VALUE);
+VALUE _logout_from_guest(VALUE, VALUE);
 
 /* Misc functions */
 VALUE _getproperty(VALUE, VALUE, VALUE);
+VALUE _getproperty_int(VixHandle, int);
+VALUE _getproperty_str(VixHandle, int);
+VALUE _getproperty_bool(VixHandle, int);
+VALUE _getproperty_handle(VixHandle, int);
+VALUE _getproperty_int64(VixHandle, int);
+VALUE _getproperty_blob(VixHandle, int);
