@@ -29,6 +29,19 @@ VALUE _directory_exists_in_guest(VALUE, VALUE, VALUE);
 VALUE _login_in_guest(VALUE, VALUE, VALUE, VALUE);
 VALUE _logout_from_guest(VALUE, VALUE);
 VALUE _enable_shared_folders(VALUE, VALUE, VALUE);
+VALUE _file_exists_in_guest(VALUE, VALUE, VALUE);
+VALUE _file_size(VALUE, VALUE, VALUE);
+VALUE _file_is_directory(VALUE, VALUE, VALUE);
+VALUE _file_is_symlink(VALUE, VALUE, VALUE);
+VALUE _file_mod_time(VALUE, VALUE, VALUE);
+VALUE _install_tools(VALUE, VALUE);
+VALUE _kill_process_in_guest(VALUE, VALUE, VALUE);
+VALUE _list_directory_in_guest(VALUE, VALUE, VALUE);
+VALUE _list_processes_in_guest(VALUE, VALUE);
+VALUE _open_url_in_guest(VALUE, VALUE, VALUE);
+VALUE _rename_file_in_guest(VALUE, VALUE, VALUE, VALUE);
+VALUE _run_program_in_guest(VALUE, VALUE, VALUE, VALUE);
+VALUE _run_script_in_guest(VALUE, VALUE, VALUE, VALUE);
 
 /* Misc functions */
 VALUE _getproperty(VALUE, VALUE, VALUE);

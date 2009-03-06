@@ -64,7 +64,20 @@ Init_vixapi()
 	rb_define_singleton_method(rb_cVixAPI,"_login_in_guest",_login_in_guest,3);
 	rb_define_singleton_method(rb_cVixAPI,"_logout_from_guest",_logout_from_guest,1);
 	rb_define_singleton_method(rb_cVixAPI,"_enable_shared_folders",_enable_shared_folders,2);
-   
+	rb_define_singleton_method(rb_cVixAPI,"_file_exists_in_guest",_file_exists_in_guest,2);
+	rb_define_singleton_method(rb_cVixAPI,"_file_size",_file_size,2);
+	rb_define_singleton_method(rb_cVixAPI,"_file_is_directory",_file_is_directory,2);
+	rb_define_singleton_method(rb_cVixAPI,"_file_is_symlink",_file_is_symlink,2);
+	rb_define_singleton_method(rb_cVixAPI,"_file_mod_time",_file_mod_time,2);
+	rb_define_singleton_method(rb_cVixAPI,"_install_tools",_install_tools,1);
+	rb_define_singleton_method(rb_cVixAPI,"_kill_process_in_guest",_kill_process_in_guest,2);
+	rb_define_singleton_method(rb_cVixAPI,"_list_directory_in_guest",_list_directory_in_guest,2);
+	rb_define_singleton_method(rb_cVixAPI,"_list_processes_in_guest",_list_processes_in_guest,1);
+	rb_define_singleton_method(rb_cVixAPI,"_open_url_in_guest",_open_url_in_guest,2);
+	rb_define_singleton_method(rb_cVixAPI,"_rename_file_in_guest",_rename_file_in_guest,3);
+	rb_define_singleton_method(rb_cVixAPI,"_run_program_in_guest",_run_program_in_guest,3);
+	rb_define_singleton_method(rb_cVixAPI,"_run_script_in_guest",_run_script_in_guest,3);
+
 	/* Misc methods */
 	rb_define_singleton_method(rb_cVixAPI,"_getproperty",_getproperty,2);
 }

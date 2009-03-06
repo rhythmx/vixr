@@ -16,24 +16,14 @@ module VixAPI
     # Guest OS methods
     #
 
-    def capture_screen_image(*args); raise "NOT IMPLEMENTED"; end
     def install_tools(*args); raise "NOT IMPLEMENTED"; end
-    def wait_for_tools_in_guest(*args); raise "NOT IMPLEMENTED"; end
 
     #
     # Guest OS File methods
     #
 
-    def copy_file_from_guest_to_host(*args); raise "NOT IMPLEMENTED"; end
-    def copy_file_from_host_to_guest(*args); raise "NOT IMPLEMENTED"; end
     def create_directory_in_guest(*args); raise "NOT IMPLEMENTED"; end
-    def create_temp_file_in_guest(*args); raise "NOT IMPLEMENTED"; end
-    def delete_directory_in_guest(*args); raise "NOT IMPLEMENTED"; end
-    def delete_file_in_guest(*args); raise "NOT IMPLEMENTED"; end
-    def directory_exists_in_guest(*args); raise "NOT IMPLEMENTED"; end
     def list_directory_in_guest(*args); raise "NOT IMPLEMENTED"; end
-    def file_exists_in_guest(*args); raise "NOT IMPLEMENTED"; end
-    def get_file_info_in_guest(*args); raise "NOT IMPLEMENTED"; end
     def rename_file_in_guest(*args); raise "NOT IMPLEMENTED"; end
 
     #
@@ -346,7 +336,59 @@ module VixR
         def disable_shared_folders
             VixAPI._enable_shared_folders(self,false);
         end
+
+        def file_exists?(filename)
+            VixAPI._file_exists_in_guest(self,filename)
+        end
+
+        def file_size(filename)
+            VixAPI._file_size(self,filename)
+        end
         
+        def directory?(path)
+            VixAPI._file_is_directory(self,path)
+        end
+
+        def symlink?(path)
+            VixAPI._file_is_symlink(self,path)
+        end
+        
+        def file_mod_time(path)
+            VixAPI._file_mod_time(self,path)
+        end
+        
+        def install_tools
+            VixAPI._install_tools(self)
+        end
+
+        def kill_pid(pid)
+            VixAPI._kill_process_in_guest(self,pid)
+        end
+
+        def list_dir(dir)
+            VixAPI._list_directory_in_guest(self,dir)
+        end
+
+        def list_pids
+            VixAPI._list_processes_in_guest(self)
+        end
+
+        def open_url(url)
+            VixAPI._open_url_in_guest(self,url)
+        end
+
+        def rename(src,dst)
+            VixAPI._rename_file_in_guest(self,src,dst)
+        end
+
+        def run_prog(exe,args)
+            VixAPI._run_program_in_guest(self,exe,args)
+        end
+
+        def run_script(interpreter,sourcetxt)
+            VixAPI._run_script_in_guest(self,interpreter,sourcetext)
+        end
+
         #
         # Properties
         #
