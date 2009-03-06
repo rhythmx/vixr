@@ -63,6 +63,7 @@ Init_vixapi()
 	rb_define_singleton_method(rb_cVixAPI,"_directory_exists_in_guest", _directory_exists_in_guest, 2);
 	rb_define_singleton_method(rb_cVixAPI,"_login_in_guest",_login_in_guest,3);
 	rb_define_singleton_method(rb_cVixAPI,"_logout_from_guest",_logout_from_guest,1);
+	rb_define_singleton_method(rb_cVixAPI,"_enable_shared_folders",_enable_shared_folders,2);
    
 	/* Misc methods */
 	rb_define_singleton_method(rb_cVixAPI,"_getproperty",_getproperty,2);

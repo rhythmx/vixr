@@ -28,6 +28,7 @@ VALUE _delete_file_in_guest(VALUE, VALUE, VALUE);
 VALUE _directory_exists_in_guest(VALUE, VALUE, VALUE);
 VALUE _login_in_guest(VALUE, VALUE, VALUE, VALUE);
 VALUE _logout_from_guest(VALUE, VALUE);
+VALUE _enable_shared_folders(VALUE, VALUE, VALUE);
 
 /* Misc functions */
 VALUE _getproperty(VALUE, VALUE, VALUE);

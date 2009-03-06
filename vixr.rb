@@ -338,6 +338,14 @@ module VixR
         def logout
             VixAPI._logout_from_guest(self)
         end
+
+        def enable_shared_folders
+            VixAPI._enable_shared_folders(self,true);
+        end
+
+        def disable_shared_folders
+            VixAPI._enable_shared_folders(self,false);
+        end
         
         #
         # Properties

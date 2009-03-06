@@ -268,14 +268,29 @@ _logout_from_guest(VALUE self, VALUE rvm)
 }
 
 
-/*
-
 VALUE 
 _enable_shared_folders(VALUE self, VALUE rvm, VALUE enabled)
 {
+	VixHandle vm = NUM2INT(rb_iv_get(rvm,"@handle"));
+	VixHandle job;
+	VixError err;
+	int enable = (enabled==Qfalse||enabled==Qnil)?0:1; 
 
+	job = VixVM_EnableSharedFolders(vm,enable,0,NULL,NULL);
+	err = VixJob_Wait(job, VIX_PROPERTY_NONE);
+	Vix_ReleaseHandle(job);
+	
+	if(VIX_FAILED(err))
+	{
+		fprintf(stderr,"Failed to enable shared folders: %s\n", Vix_GetErrorText(err,NULL));
+		return Qnil;
+	}
+
+	return enabled;
 }
 
+
+/*
 VALUE 
 _file_exists_in_guest(VALUE self, VALUE rvm)
 {
