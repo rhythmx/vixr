@@ -15,6 +15,27 @@ If you don't want to see the compiler warnings you need to patchup
    `/usr/include/vmware-vix/basic-types.h' so that it doesn't redefine symbols.
 
 --------------------------------------------------------------------------------
+| Using
+--------------------------------------------------------------------------------
+require 'vixr'
+
+# ex using a local install of VMWare Workstation
+host = VixR.connect()
+vm = host.open_vmx("/home/user/vmware/Ubuntu/Ubuntu.vmx")
+
+if not vm.running?
+	vm.power_on
+end
+
+vm.wait_for_tools(300)
+
+if vm.login("root","sekrit")
+	vm.run_prog("/bin/bash","-c 'find /root' > /tmp/rootfiles")
+end
+
+vm.power_off(:fromguest=>true) 
+
+--------------------------------------------------------------------------------
 | Developing
 --------------------------------------------------------------------------------
 
