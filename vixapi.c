@@ -38,7 +38,7 @@ Init_vixapi()
 	rb_define_singleton_method(rb_cVixAPI,"_connect",_connect,5);
 	rb_define_singleton_method(rb_cVixAPI,"_disconnect",_disconnect,1);
 	rb_define_singleton_method(rb_cVixAPI,"_open_vmx",_open_vmx,2);
-   	rb_define_singleton_method(rb_cVixAPI,"_find_items",_find_items,2);
+	rb_define_singleton_method(rb_cVixAPI,"_find_items",_find_items,2);
 
 	/* VM methods */
 	rb_define_singleton_method(rb_cVixAPI,"_power_on",_power_on,2);

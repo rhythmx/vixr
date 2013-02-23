@@ -94,19 +94,19 @@ VixDiscoveryProc(VixHandle jobHandle, VixEventType eventType, VixHandle moreEven
 	VALUE str;
 
 	// Check callback event; ignore progress reports.
-	if (VIX_EVENTTYPE_FIND_ITEM != eventType) {
-	  return;
-	}
+	if (VIX_EVENTTYPE_FIND_ITEM != eventType)
+		return;
 
 	// Found a virtual machine.
 	err = Vix_GetProperties(moreEventInfo,
-									VIX_PROPERTY_FOUND_ITEM_LOCATION,
-									&url,
-									VIX_PROPERTY_NONE);
-	if (VIX_OK != err) {
-	  // Handle the error...
-	  Vix_FreeBuffer(url);
-	  return;
+							VIX_PROPERTY_FOUND_ITEM_LOCATION,
+							&url,
+							VIX_PROPERTY_NONE);
+	if (VIX_OK != err)
+	{
+		// Handle the error...
+		Vix_FreeBuffer(url);
+		return;
 	}
 
 	// puts(url);
@@ -129,17 +129,17 @@ _find_items(VALUE self, VALUE rhosthandle, VALUE rstype)
 	stype = (rstype!=Qnil)?NUM2INT(rstype):0;
 	arr = rb_ary_new();
 	job = VixHost_FindItems(host, stype,
-									VIX_INVALID_HANDLE, // searchCriteria
-									-1, // timeout
-									VixDiscoveryProc,
-									(void *)arr);
+							VIX_INVALID_HANDLE, // searchCriteria
+							-1, // timeout
+							VixDiscoveryProc,
+							(void *)arr);
 
 	err = VixJob_Wait(job, VIX_PROPERTY_NONE);
 	if (VIX_FAILED(err)) {
-	  // Handle the error...
-	  printf("ERROR in _find_items: %s\n", Vix_GetErrorText(err, NULL));
+		// Handle the error...
+		printf("ERROR in _find_items: %s\n", Vix_GetErrorText(err, NULL));
 	}
 
-   Vix_ReleaseHandle(job);
-   return arr;
+	Vix_ReleaseHandle(job);
+	return arr;
 }
