@@ -1,6 +1,7 @@
 /* Auth/Session routines */
 VALUE _connect(VALUE, VALUE, VALUE, VALUE, VALUE, VALUE);
 VALUE _disconnect(VALUE, VALUE);
+VALUE _find_items(VALUE, VALUE, VALUE);
 
 VALUE _open_vmx(VALUE, VALUE, VALUE);
 

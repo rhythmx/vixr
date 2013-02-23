@@ -85,3 +85,61 @@ _open_vmx(VALUE self,VALUE rhosthandle, VALUE rpath)
 } 
 
 
+static void
+VixDiscoveryProc(VixHandle jobHandle, VixEventType eventType, VixHandle moreEventInfo, void *clientData)
+{
+	VALUE arr = (VALUE)clientData;
+	VixError err = VIX_OK;
+	char *url = NULL;
+	VALUE str;
+
+	// Check callback event; ignore progress reports.
+	if (VIX_EVENTTYPE_FIND_ITEM != eventType)
+		return;
+
+	// Found a virtual machine.
+	err = Vix_GetProperties(moreEventInfo,
+							VIX_PROPERTY_FOUND_ITEM_LOCATION,
+							&url,
+							VIX_PROPERTY_NONE);
+	if (VIX_OK != err)
+	{
+		// Handle the error...
+		Vix_FreeBuffer(url);
+		return;
+	}
+
+	// puts(url);
+	str = rb_str_new2(url);
+	rb_ary_push(arr, str);
+	Vix_FreeBuffer(url);
+}
+
+
+VALUE
+_find_items(VALUE self, VALUE rhosthandle, VALUE rstype)
+{
+	VixHandle job;
+	VixHandle host;
+	int stype;
+	VixError err;
+	VALUE arr;
+
+	host = NUM2INT(rb_iv_get(rhosthandle,"@handle"));
+	stype = (rstype!=Qnil)?NUM2INT(rstype):0;
+	arr = rb_ary_new();
+	job = VixHost_FindItems(host, stype,
+							VIX_INVALID_HANDLE, // searchCriteria
+							-1, // timeout
+							VixDiscoveryProc,
+							(void *)arr);
+
+	err = VixJob_Wait(job, VIX_PROPERTY_NONE);
+	if (VIX_FAILED(err)) {
+		// Handle the error...
+		printf("ERROR in _find_items: %s\n", Vix_GetErrorText(err, NULL));
+	}
+
+	Vix_ReleaseHandle(job);
+	return arr;
+}
