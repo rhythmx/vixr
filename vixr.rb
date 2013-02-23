@@ -106,7 +106,11 @@ module VixAPI
             Guest            = 1
             ConfigRuntime    = 2
             GuestEnvironment = 3
-        end
+			end
+			module SearchType
+				Running         = 1
+				Registered      = 4
+			end
     end
 
     # Encapsulation for handles (mostly to make properties easy)
@@ -188,7 +192,11 @@ module VixR
         # This should automatically be called automatically when the program exits
         def disconnect()
             VixAPI._disconnect(@handle)
-        end
+			end
+			
+			def find_items(stype)
+				VixAPI._find_items(self,stype)
+			end
 
         #
         # Properties
